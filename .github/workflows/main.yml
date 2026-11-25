@@ -38,7 +38,7 @@ jobs:
           echo "PROJECT_DIR=$PROJECT_DIR" >> $GITHUB_ENV
 
       - name: Installer les dépendances
-        run: cd "$PROJECT_DIR" && npm install
+        run: cd "$PROJECT_DIR" && npm install --legacy-peer-deps
 
       - name: Construire Android
         run: |
