@@ -1,36 +1,5 @@
-name: Build NERF SCORE APK
-
-on:
-  workflow_dispatch:
-  push:
-    branches:
-      - main
-      - master
-
-jobs:
-  build-apk:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-    
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-
-      - name: Set up Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '17'
 
       - name: Locate or extract NERF SCORE project
-        shell: bash
-
         shell: bash
         run: |
           set -euo pipefail
@@ -40,7 +9,7 @@ jobs:
           else
             ZIP_FILE="$(find . -maxdepth 1 -type f -iname '*.zip' -print -quit)"
             if [ -z "$ZIP_FILE" ]; then
-              echo "::error::Aucun package.json ni fichier ZIP du projet trouvé à la racine du dépôt."
+              echo "::error::Aucun fichier ZIP trouvé."
               exit 1
             fi
 
@@ -49,7 +18,7 @@ jobs:
 
             PACKAGE_FILE="$(find extracted -type f -name package.json -print -quit)"
             if [ -z "$PACKAGE_FILE" ]; then
-              echo "::error::Le ZIP ne contient aucun package.json."
+              echo "::error::package.json introuvable."
               exit 1
             fi
 
@@ -57,42 +26,9 @@ jobs:
           fi
 
           echo "PROJECT_DIR=$PROJECT_DIR" >> "$GITHUB_ENV"
-          echo "Projet détecté dans : $PROJECT_DIR"
+          echo "Projet détecté : $PROJECT_DIR"
+
           test -f "$PROJECT_DIR/capacitor.config.ts" || {
-            echo "::error::capacitor.config.ts absent du projet. Utilise l'archive Android préparée."
+            echo "::error::capacitor.config.ts absent."
             exit 1
           }
-
-      - name: Install npm dependencies
-        run: npm install --legacy-peer-deps
-        working-directory: ${{ env.PROJECT_DIR }}
-
-      - name: Generate Android platform
-        shell: bash
-        run: |
-          set -euo pipefail
-          if [ ! -d android ]; then
-            npx cap add android
-          else
-            echo "Le dossier Android existe déjà ; on le réutilise."
-          fi
-        working-directory: ${{ env.PROJECT_DIR }}
-
-      - name: Build web app and sync Android
-        run: npm run cap:sync
-        working-directory: ${{ env.PROJECT_DIR }}
-
-      - name: Build debug APK
-        shell: bash
-        run: |
-          set -euo pipefail
-          chmod +x gradlew
-          ./gradlew assembleDebug
-        working-directory: ${{ env.PROJECT_DIR }}/android
-
-      - name: Upload APK artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: NERF-SCORE-APK
-          path: ${{ env.PROJECT_DIR }}/android/app/build/outputs/apk/debug/app-debug.apk
-          if-no-files-found: error
